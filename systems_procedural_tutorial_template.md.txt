@@ -1,0 +1,126 @@
+**How to Set Up Docker Volumes for Persistent Data Storage on Ubuntu 22.04**
+
+**Introduction**
+
+Docker provides a powerful way to run applications in isolated containers, which helps streamline development and deployment processes. However, containers are ephemeral by nature, meaning any data inside them is lost when they are stopped or removed. This is where Docker volumes come into play. Volumes allow you to store data persistently, outside of the container’s lifecycle, ensuring that your data remains intact even if the container is recreated.
+
+In this guide, you'll learn how to set up Docker volumes on an Ubuntu 22.04 server. You’ll start by installing Docker if it’s not already present, then create and use volumes to store data persistently across container restarts. To follow along, you will need:
+
+- Access to an Ubuntu 22.04 local machine or development server as a non-root user with sudo privileges. If you’re using a remote server, it’s advisable to have an active firewall installed. To set these up, please refer to our article:(https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu)
+- Docker installed on your server or local machine, following Steps 1 and 2 of (https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-22-04)
+
+
+**Step 1 — Creating and Using Docker Volumes**
+
+Docker volumes ensure data persists independently of container lifecycles. First, create a volume to manage storage separately from containers. Next, attach this volume to containers, allowing them to read/write data persistently. This separation simplifies data management and retention across container restarts. Here is a breakdown of each step:
+
+1. ## Create a Docker Volume
+
+   To create a new Docker volume, use the following command:
+
+   ```bash
+   docker volume create my_data
+   ```
+
+   This command creates a volume named `my_data`. Docker volumes are stored in a part of the host filesystem managed by Docker (`/var/lib/docker/volumes/`).
+
+2. ## Using Docker Volumes in Containers
+
+   When running a container, you can mount the volume to a specific path inside the container using the `-v` or `--mount` flag. Here’s how to start a container with the `my_data` volume mounted:
+
+   ```bash
+   docker run -d -p 80:80 -v my_data:/usr/share/nginx/html nginx:alpine
+   ```
+
+   This command runs an Nginx container with the `my_data` volume mounted to `/usr/share/nginx/html` inside the container. Any files you place in the `my_data` volume will be served by the Nginx server.
+
+3. ## Inspecting and Managing Docker Volumes
+
+   To list all Docker volumes:
+
+   ```bash
+   docker volume ls
+   ```
+
+   To inspect a specific volume and see details like its mount point:
+
+   ```bash
+   docker volume inspect my_data
+   ```
+
+   To remove a volume (ensure no containers are using it):
+
+   ```bash
+   docker volume rm my_data
+   ```
+
+**Step 2 — Persisting Data with Docker Volumes**
+
+In this step, you will start a container with a volume to store data persistently. Next, add files to this volume from a temporary container to simulate real-world usage. Finally, verify that the data persists by restarting the container and checking for file availability. This process demonstrates how Docker volumes maintain data across container restarts, ensuring that important information remains intact and accessible.
+
+1. ## Start a Container with a Volume
+
+   Run a container with a volume attached:
+
+   ```bash
+   docker run -d -p 8080:80 -v my_data:/usr/share/nginx/html nginx:alpine
+   ```
+
+   This command mounts the `my_data` volume to the Nginx container. Any files you place in `my_data` will be available to the Nginx server.
+
+2. ## Add Files to the Volume
+
+   Create a new file on your host system and copy it to the volume:
+
+   ```bash
+   docker run --rm -v my_data:/data alpine sh -c "echo 'Hello from Docker Volume!' > /data/hello.txt"
+   ```
+
+   This command uses an Alpine container to create a file inside the volume. The `--rm` flag ensures the container is removed after the operation.
+
+3. ## Verify Data Persistence
+
+   Access your Nginx server and navigate to the URL `http://localhost:8080/hello.txt`. You should see the content `Hello from Docker Volume!`.
+
+   To further test persistence, restart the Nginx container:
+
+   ```bash
+   docker restart <container_id>
+   ```
+
+   The file `hello.txt` should still be accessible, confirming that the data in the volume persists even after container restarts.
+
+**Step 3 — Managing Docker Volumes**
+
+In this step, you will manage Docker volumes by listing them to track available storage, inspecting them to review details and usage, and pruning unused volumes to free up space. These actions help maintain an organized environment, ensuring that only relevant volumes consume resources and simplifying data management in your Docker setup. This keeps your system efficient and clutter-free.
+
+1. ## List Volumes
+
+   To see all Docker volumes:
+
+   ```bash
+   docker volume ls
+   ```
+
+2. ## Inspect Volumes
+
+   To view details about a specific volume:
+
+   ```bash
+   docker volume inspect my_data
+   ```
+
+3. ## Remove Unused Volumes
+
+   To clean up unused volumes:
+
+   ```bash
+   docker volume prune
+   ```
+
+   This command removes all unused volumes. Use with caution as it deletes volumes not referenced by any containers.
+
+**Conclusion**
+
+In this article, you learned how to set up and manage Docker volumes for persistent data storage. Now you can efficiently maintain data across container restarts, ensuring that critical information is preserved and accessible. Mastering Docker volumes enhances your ability to manage stateful applications and optimize data retention. For further exploration, check out advanced Docker volume configurations and integration with Docker Swarm for scalable deployments.
+For more information on Docker volumes and advanced usage, refer to the [official Docker documentation](https://docs.docker.com/storage/volumes/).
