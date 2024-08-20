@@ -1,0 +1,118 @@
+# How to Use Docker Volumes for Persistent Storage on Ubuntu 22.04
+
+**Introduction**
+
+Running applications in Docker containers offers great flexibility and portability. However, by default, Docker containers are stateless and temporary; all data within the container is lost once it stops or is removed. To overcome this limitation, Docker provides volumes—a solution for storing persistent data outside of the container lifecycle.
+
+This guide will show you how to configure Docker volumes on an Ubuntu 22.04 server to ensure data persists across container restarts. You will first ensure Docker is installed and then learn to create and manage volumes for continuous data storage. Here’s what you’ll need:
+
+- An Ubuntu 22.04 server or local machine with non-root user privileges and sudo access. If you are using a remote server, ensure an active firewall is in place. You can refer to the (https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu) to configure this environment.
+- Docker installed following the steps from this article guide (https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-22-04).
+
+**Step 1 — Creating and Mounting Docker Volumes**
+
+Docker volumes are external storage that persist independently of the containers that use them. In this step, you will create a volume, attach it to a container, and verify that your data persists even when containers are restarted.
+
+1. ## Creating a Docker Volume
+
+   To create a volume, use the following command:
+
+   ```bash
+   docker volume create persistent_data
+   ```
+
+   This command creates a volume named `persistent_data`. Volumes are stored under Docker’s directory on the host machine, typically at `/var/lib/docker/volumes/`.
+
+2. ## Using Docker Volumes in a Container
+
+   You can attach the created volume to a container using the `-v` or `--mount` flag when running it:
+
+   ```bash
+   docker run -d -p 80:80 -v persistent_data:/usr/share/nginx/html nginx:alpine
+   ```
+
+   In this example, an Nginx container is launched with the `persistent_data` volume mounted to `/usr/share/nginx/html` inside the container. Data written to this directory will be stored in the volume and remain accessible even if the container is removed.
+
+3. ## Verifying Data Persistence
+
+   Let’s test that your data persists. You can do this by running a temporary container to add content to the volume:
+
+   ```bash
+   docker run --rm -v persistent_data:/data alpine sh -c "echo 'Persistent storage test' > /data/test.txt"
+   ```
+
+   This command creates a text file inside the `persistent_data` volume. The `--rm` flag removes the container after the command completes.
+
+   Access the Nginx server at `http://localhost/test.txt` to confirm that the file is accessible. The content should read `Persistent storage test`.
+
+**Step 2 — Managing Docker Volumes**
+
+Now that you have set up a volume, let’s explore some common management tasks like inspecting, listing, and cleaning up unused volumes.
+
+1. ## Listing All Docker Volumes
+
+   To see all the volumes on your system:
+
+   ```bash
+   docker volume ls
+   ```
+
+   This command provides a list of all existing Docker volumes, allowing you to track storage resources.
+
+2. ## Inspecting Volume Details
+
+   If you want to check the details of a specific volume, such as its mount point or usage:
+
+   ```bash
+   docker volume inspect persistent_data
+   ```
+
+   The output will include metadata, mount paths, and other relevant information about the volume.
+
+3. ## Cleaning Up Unused Volumes
+
+   Over time, you might accumulate unused volumes that consume space. You can remove them with:
+
+   ```bash
+   docker volume prune
+   ```
+
+   This command deletes all volumes that are not currently being used by any containers, freeing up storage space.
+
+**Step 3 — Using Docker Volumes for Real-World Applications**
+
+For most applications, you will want data to persist across restarts. Here’s how you can achieve this with Docker volumes in a practical scenario.
+
+1. ## Running an Application with Persistent Storage
+
+   Start a container with your volume attached:
+
+   ```bash
+   docker run -d -p 8080:80 -v persistent_data:/usr/share/nginx/html nginx:alpine
+   ```
+
+   The volume is now being used by an Nginx container, allowing data to be stored persistently.
+
+2. ## Adding Data to the Volume
+
+   Use a temporary container to add a file to the volume:
+
+   ```bash
+   docker run --rm -v persistent_data:/data alpine sh -c "echo 'Data stored in volume' > /data/info.txt"
+   ```
+
+   You can now access this file through the Nginx server at `http://localhost:8080/info.txt`.
+
+3. ## Ensuring Data Remains After Container Restart
+
+   Restart the Nginx container:
+
+   ```bash
+   docker restart <container_id>
+   ```
+
+   The file `info.txt` will still be accessible after the restart, demonstrating that the volume’s data remains persistent.
+
+**Conclusion**
+
+In this guide, you learned how to set up and use Docker volumes for persistent data storage on Ubuntu 22.04. You now have the tools to keep your data intact across container lifecycles, making your Docker applications more reliable. By mastering Docker volumes, you can confidently handle data persistence, manage storage efficiently, and simplify application deployments. To explore more advanced configurations, refer to the [official Docker documentation](https://docs.docker.com/storage/volumes/).
